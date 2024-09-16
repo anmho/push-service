@@ -11,5 +11,8 @@ cdk.out
 .env.prod
 .env.*
 !.env.development
+!env.js
 .idea
 .DS_STORE
+
+/tmp/
