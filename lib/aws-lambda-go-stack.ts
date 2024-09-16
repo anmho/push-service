@@ -1,13 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import {
-  RestApi,
-  LambdaIntegration,
-  ProxyResource,
-  LambdaRestApi,
-} from 'aws-cdk-lib/aws-apigateway';
+import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import * as go from '@aws-cdk/aws-lambda-go-alpha';
 
 export class AwsLambdaGoStack extends cdk.Stack {
@@ -15,7 +8,7 @@ export class AwsLambdaGoStack extends cdk.Stack {
     super(scope, id, props);
 
     const main = new go.GoFunction(this, 'main', {
-      entry: 'api',
+      entry: 'lambda/cmd',
     });
     const gateway = new LambdaRestApi(this, 'myGateway', {
       handler: main,
