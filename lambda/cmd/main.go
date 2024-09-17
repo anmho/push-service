@@ -1,16 +1,18 @@
 package main
 
 import (
-	"aws-lambda-go/api"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"send-to/api"
+	"send-to/dynamo"
+	"send-to/expo"
+	"send-to/push"
 
 	"flag"
 
@@ -23,30 +25,6 @@ const (
 	port = 8080
 )
 
-func WithEndpoint(endpoint string) func(o *dynamodb.Options) {
-	return func(o *dynamodb.Options) {
-		o.BaseEndpoint = &endpoint
-	}
-}
-
-func MakeDynamoClient(ctx context.Context, region string, isLocal bool) (*dynamodb.Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion(region),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var opts []func(*dynamodb.Options)
-	if isLocal {
-		opts = append(opts, WithEndpoint("http://localhost:8000"))
-	}
-
-	client := dynamodb.NewFromConfig(cfg, opts...)
-	return client, nil
-}
-
 func main() {
 	isLocal := flag.Bool("local", false, "-local specifies whether to run in prod mode (local=false) (AWS Lambda) or dev mode (localhost)")
 	flag.Parse()
@@ -56,18 +34,20 @@ func main() {
 	var dynamoClient *dynamodb.Client
 	var err error
 	if *isLocal {
-		dynamoClient, err = MakeDynamoClient(ctx, "localhost", true)
+		dynamoClient, err = dynamo.MakeClient(ctx, "localhost", true)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	} else {
-		dynamoClient, err = MakeDynamoClient(ctx, "us-west-2", false)
+		dynamoClient, err = dynamo.MakeClient(ctx, "us-west-2", false)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}
 
-	mux := api.New(dynamoClient)
+	expoClient := expo.MakeClient()
+	pushClient := push.MakeClient(dynamoClient, expoClient)
+	mux := api.New(pushClient)
 
 	if *isLocal {
 		_ = godotenv.Load(".env.development")

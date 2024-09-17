@@ -8,6 +8,5 @@ dotenv.config({
 
 export const env = z
   .object({
-    STRIPE_KEY: z.string(),
   })
   .parse(process.env);
