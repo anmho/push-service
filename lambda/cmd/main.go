@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/scheduler"
 	"log"
 	"log/slog"
 	"net/http"
@@ -33,21 +35,31 @@ func main() {
 
 	var dynamoClient *dynamodb.Client
 	var err error
-	if *isLocal {
-		dynamoClient, err = dynamo.MakeClient(ctx, "localhost", true)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		dynamoClient, err = dynamo.MakeClient(ctx, "us-west-2", false)
-		if err != nil {
-			log.Fatalln(err)
-		}
+	//if *isLocal {
+	//	dynamoClient, err = dynamo.MakeService(ctx, "localhost", true)
+	//	if err != nil {
+	//		log.Fatalln(err)
+	//	}
+	//} else {
+	var region = "us-west-2"
+	dynamoClient, err = dynamo.MakeClient(ctx, region, false)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//}
+
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(region),
+	)
+
+	schedulerClient := scheduler.NewFromConfig(cfg)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	expoClient := expo.MakeClient()
-	pushClient := push.MakeClient(dynamoClient, expoClient)
-	mux := api.New(pushClient)
+	pushService := push.MakeService(dynamoClient, schedulerClient, expoClient)
+	mux := api.New(pushService)
 
 	if *isLocal {
 		_ = godotenv.Load(".env.development")

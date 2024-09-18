@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log/slog"
 	"net/http"
 )
@@ -41,7 +40,16 @@ type Message struct {
 	MutableContent   *bool                  `json:"mutableContent,omitempty"`    // iOS Only: If the notification can be intercepted
 }
 
-func (c *Client) SendPush(ctx context.Context, message Message) error {
+type PushReceipt struct {
+	Status string `json:"status"`
+	ID     string `json:"id"`
+}
+
+type PushResponse struct {
+	Data []PushReceipt `json:"data"`
+}
+
+func (c *Client) SendPush(ctx context.Context, message Message) (*PushResponse, error) {
 	slog.Info("SendPush invoked")
 	body, err := json.Marshal(message)
 
@@ -50,7 +58,7 @@ func (c *Client) SendPush(ctx context.Context, message Message) error {
 
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Host", "exp.host")
@@ -60,18 +68,15 @@ func (c *Client) SendPush(ctx context.Context, message Message) error {
 	resp, err := client.Do(r)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	json.NewDecoder(resp.Body)
-
-	body, err = ioutil.ReadAll(resp.Body)
+	var expoResponse PushResponse
+	err = json.NewDecoder(resp.Body).Decode(&expoResponse)
 	if err != nil {
-		fmt.Println(err)
-		return err
+		return nil, err
 	}
-	fmt.Println(string(body))
 
-	return nil
+	return &expoResponse, nil
 }

@@ -9,7 +9,7 @@ api:
 	@cd lambda && go build -o ./bin/api ./cmd
 
 .PHONY: deploy
-deploy: api
+deploy: api check
 	@cdk deploy
 
 .PHONY: staging
@@ -26,3 +26,7 @@ check:
 	@cd lambda && go vet ./...
 	@echo "synthesizing CloudFormation"
 	@cdk synth
+
+.PHONY: test
+test:
+	@cd lambda && go test ./...

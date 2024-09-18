@@ -2,16 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/go-playground/validator/v10"
 	"io"
 	"net/http"
 )
 
-var (
-	validate = validator.New(validator.WithRequiredStructEnabled())
-)
-
 func ReadJSON[T any](body io.ReadCloser) (*T, error) {
+
 	model := new(T)
 	decoder := json.NewDecoder(body)
 	decoder.DisallowUnknownFields()
@@ -21,7 +17,6 @@ func ReadJSON[T any](body io.ReadCloser) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = validate.Struct(model)
 	if err != nil {
 		return nil, err

@@ -7,7 +7,7 @@ import (
 	"send-to/push"
 )
 
-func New(pushClient push.Client) http.Handler {
+func New(pushClient push.Service) http.Handler {
 	r := http.NewServeMux()
 	r.HandleFunc("GET /ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/plain")
